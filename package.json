@@ -16,7 +16,9 @@
     "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
-    "react-scripts": "latest"
+    "@vitejs/plugin-react": "^5.1.1",
+    "react-scripts": "latest",
+    "vite": "^7.2.6"
   },
   "browserslist": {
     "production": [
