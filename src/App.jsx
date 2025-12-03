@@ -1,8 +1,40 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Brain, List, Search, RefreshCw, CheckCircle, XCircle, ChevronRight, ChevronLeft, Volume2, History, Trophy, Info, Settings, Sliders } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BookOpen, Brain, List, Search, ChevronRight, ChevronLeft, Volume2, History, Info, Settings, GraduationCap, ArrowRight, XCircle, Type, MessageSquare, RotateCw, Scale } from 'lucide-react';
 
 // -----------------------------------------------------------------------------
-// 資料來源：擴充版數據 (含中文翻譯與用法解析)
+// CSS Styles for 3D Flip Card (Injected directly to ensure compatibility)
+// -----------------------------------------------------------------------------
+const customStyles = `
+  .flip-card-container {
+    perspective: 1000px;
+  }
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+  .flip-card-inner.flipped {
+    transform: rotateY(180deg);
+  }
+  .flip-card-front, .flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 0.75rem; /* rounded-xl */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+  }
+  .flip-card-back {
+    transform: rotateY(180deg);
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// 資料來源
 // -----------------------------------------------------------------------------
 const verbData = [
   { 
@@ -36,14 +68,24 @@ const verbData = [
     exampleTrans: "既然我們時間不多，我們應該立刻開始會議。"
   },
   { 
+    verb: "antworten", 
+    verbTrans: "回答",
+    prep: "auf", 
+    case: "A", 
+    usage: "antworten auf + A (回答某問題/信件)",
+    forms: "antwortete / hat geantwortet",
+    example: "Herr Sauerbier will nicht auf die Fragen des Reporters antworten.",
+    exampleTrans: "Sauerbier 先生不想回答記者的問題。"
+  },
+  { 
     verb: "sich ärgern", 
     verbTrans: "生氣 / 惱火",
     prep: "über", 
     case: "A", 
     usage: "",
     forms: "ärgerte sich / hat sich geärgert",
-    example: "Er ärgert sich ständig darüber, dass sein Nachbar so laut Musik hört.",
-    exampleTrans: "他經常為了鄰居聽音樂太大聲而感到生氣。"
+    example: "Mein Vater ärgert sich immer noch über den dreisten Taxifahrer.",
+    exampleTrans: "我父親還在為那個粗魯的計程車司機生氣。"
   },
   { 
     verb: "aufhören", 
@@ -52,8 +94,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "hörte auf / hat aufgehört",
-    example: "Du musst endlich mit dem Rauchen aufhören, wenn du gesund bleiben willst.",
-    exampleTrans: "如果你想保持健康，你就必須終於戒菸了。"
+    example: "Kannst du bitte mit dem Krach aufhören?",
+    exampleTrans: "你可以停止製造噪音嗎？"
   },
   { 
     verb: "aufpassen", 
@@ -82,8 +124,8 @@ const verbData = [
     case: "D / A", 
     usage: "bei + D (向某人) / für + A (為了某事)",
     forms: "bedankte sich / hat sich bedankt",
-    example: "Ich möchte mich bei Ihnen herzlich dafür bedanken, dass Sie mir so schnell geholfen haben.",
-    exampleTrans: "我想衷心感謝您這麼快就幫助了我。"
+    example: "Warum bedankst du dich nicht bei ihm für seine Hilfe?",
+    exampleTrans: "你為什麼不為了他的幫忙向他道謝呢？"
   },
   { 
     verb: "beginnen", 
@@ -102,8 +144,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "bemühte sich / hat sich bemüht",
-    example: "Trotz seiner schlechten Noten bemüht er sich sehr um einen Ausbildungsplatz.",
-    exampleTrans: "儘管成績不好，他還是非常努力爭取培訓名額。"
+    example: "Cathy aus England bemüht sich sehr um eine gute Aussprache.",
+    exampleTrans: "來自英國的 Cathy 非常努力練習好的發音。"
   },
   { 
     verb: "berichten", 
@@ -132,8 +174,8 @@ const verbData = [
     case: "D / A", 
     usage: "bei + D (向某人) / über + A (關於某事)",
     forms: "beschwerte sich / hat sich beschwert",
-    example: "Die Gäste haben sich beim Hotelmanager darüber beschwert, dass die Klimaanlage defekt war.",
-    exampleTrans: "客人向飯店經理抱怨空調壞了。"
+    example: "Die Schüler beschweren sich beim Lehrer über den schwierigen Mathetest.",
+    exampleTrans: "學生們向老師抱怨數學考試太難。"
   },
   { 
     verb: "sich bewerben", 
@@ -152,8 +194,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "bat / hat gebeten",
-    example: "Da ich mein Portemonnaie vergessen habe, muss ich dich um etwas Geld bitten.",
-    exampleTrans: "因為我忘了帶錢包，我必須請你借我一點錢。"
+    example: "Dürfte ich dich um einen kleinen Gefallen bitten?",
+    exampleTrans: "我可以請你幫個小忙嗎？"
   },
   { 
     verb: "jdm. danken", 
@@ -162,8 +204,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "dankte / hat gedankt",
-    example: "Wir danken Ihnen im Voraus für Ihr Verständnis und Ihre Kooperation.",
-    exampleTrans: "我們先感謝您的理解與合作。"
+    example: "Ich danke Ihnen für Ihre schnelle Hilfe.",
+    exampleTrans: "我感謝您快速的協助。"
   },
   { 
     verb: "denken", 
@@ -172,8 +214,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "dachte / hat gedacht",
-    example: "Wenn ich an meinen letzten Urlaub denke, bekomme ich sofort wieder Fernweh.",
-    exampleTrans: "當我想起上次的假期，我立刻又想去旅行了。"
+    example: "Im Urlaub musste ich täglich an dich denken.",
+    exampleTrans: "度假時我每天都不得不想到你。"
   },
   { 
     verb: "diskutieren", 
@@ -186,14 +228,24 @@ const verbData = [
     exampleTrans: "跟他討論政治是沒用的，因為他從不改變想法。"
   },
   { 
+    verb: "sich ekeln", 
+    verbTrans: "感到噁心 / 厭惡",
+    prep: "vor", 
+    case: "D", 
+    usage: "",
+    forms: "ekelte sich / hat sich geekelt",
+    example: "Ekelt sich deine Frau auch so sehr vor Spinnen?",
+    exampleTrans: "你的太太也這麼討厭蜘蛛嗎？"
+  },
+  { 
     verb: "jdn. einladen", 
     verbTrans: "邀請",
     prep: "zu", 
     case: "D", 
     usage: "",
     forms: "lud ein / hat eingeladen",
-    example: "Ich würde dich gerne zu meiner Party einladen, falls du an dem Tag Zeit hast.",
-    exampleTrans: "如果你那天有空的話，我很想邀請你來我的派對。"
+    example: "Lädst du Evelyne auch zu deiner Geburtstagsparty ein?",
+    exampleTrans: "你也會邀請 Evelyne 來你的生日派對嗎？"
   },
   { 
     verb: "sich entscheiden", 
@@ -212,8 +264,8 @@ const verbData = [
     case: "D / A", 
     usage: "bei + D (向某人) / für + A (為了某事)",
     forms: "entschuldigte sich / hat sich entschuldigt",
-    example: "Er hat sich sofort bei ihr dafür entschuldigt, dass er ihren Geburtstag vergessen hat.",
-    exampleTrans: "他立刻為了忘記她的生日而向她道歉。"
+    example: "Wofür soll ich mich eigentlich bei dir entschuldigen?",
+    exampleTrans: "我到底該為了什麼向你道歉？"
   },
   { 
     verb: "sich erholen", 
@@ -222,8 +274,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "erholte sich / hat sich erholt",
-    example: "Sie braucht dringend Urlaub, um sich von dem Stress der letzten Wochen zu erholen.",
-    exampleTrans: "她急需休假，以便從過去幾週的壓力中恢復過來。"
+    example: "Du musst dich auch wirklich vom Stress der letzten Wochen erholen.",
+    exampleTrans: "你真的必須從過去幾週的壓力中恢復過來。"
   },
   { 
     verb: "sich erinnern", 
@@ -232,8 +284,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "erinnerte sich / hat sich erinnert",
-    example: "Erinnerst du dich noch daran, wie wir uns zum ersten Mal getroffen haben?",
-    exampleTrans: "你還記得我們第一次見面是怎樣的情景嗎？"
+    example: "Ich kenne ihn, aber ich erinnere mich nicht an seinen Namen.",
+    exampleTrans: "我認識他，但我記不起他的名字。"
   },
   { 
     verb: "sich erkundigen", 
@@ -242,8 +294,8 @@ const verbData = [
     case: "D", 
     usage: "bei + D (向某人) / nach + D (詢問某事)",
     forms: "erkundigte sich / hat sich erkundigt",
-    example: "Bevor wir buchen, sollten wir uns beim Reisebüro nach den aktuellen Preisen erkundigen.",
-    exampleTrans: "在預訂之前，我們應該向旅行社詢問目前的價格。"
+    example: "Ein Kunde ruft an und erkundigt sich nach den Öffnungszeiten.",
+    exampleTrans: "一位顧客打電話來詢問營業時間。"
   },
   { 
     verb: "erzählen", 
@@ -252,8 +304,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "erzählte / hat erzählt",
-    example: "Er hat mir begeistert von seinem neuen Projekt erzählt, an dem er gerade arbeitet.",
-    exampleTrans: "他興奮地跟我講述了他正在進行的新專案。"
+    example: "Peter erzählt von seinem neuen Job, aber keiner hört ihm zu.",
+    exampleTrans: "Peter 講述著他上次的會議，但沒人在聽。"
   },
   { 
     verb: "fragen", 
@@ -262,8 +314,8 @@ const verbData = [
     case: "D", 
     usage: "fragen nach + D (詢問關於...)",
     forms: "fragte / hat gefragt",
-    example: "Wenn du den Weg nicht kennst, solltest du jemanden nach der Richtung fragen.",
-    exampleTrans: "如果你不認得路，你應該問人方向。"
+    example: "Ein Herr mit Hut fragt nach unserem Chef.",
+    exampleTrans: "一位戴帽子的先生指名要找我們老闆。"
   },
   { 
     verb: "sich freuen (未來)", 
@@ -272,8 +324,8 @@ const verbData = [
     case: "A", 
     usage: "auf + A (期待尚未發生的事)",
     forms: "freute sich / hat sich gefreut",
-    example: "Ich freue mich schon riesig darauf, dich nächste Woche in Berlin zu besuchen.",
-    exampleTrans: "我非常期待下週去柏林拜訪你。"
+    example: "Nächste Woche fahre ich nach Prag. Ich freue mich schon sehr darauf.",
+    exampleTrans: "下週我要去布拉格。我非常期待。"
   },
   { 
     verb: "sich freuen (現在/過去)", 
@@ -282,8 +334,28 @@ const verbData = [
     case: "A", 
     usage: "über + A (對已發生/現存的事感到高興)",
     forms: "freute sich / hat sich gefreut",
-    example: "Sie hat sich sehr darüber gefreut, dass so viele Freunde zu ihrer Party gekommen sind.",
-    exampleTrans: "她非常高興有這麼多朋友來參加她的派對。"
+    example: "Vielen Dank für das Geschenk! Ich habe mich sehr darüber gefreut!",
+    exampleTrans: "感謝您的禮物！我對此感到非常高興！"
+  },
+  { 
+    verb: "sich fürchten", 
+    verbTrans: "害怕 / 恐懼",
+    prep: "vor", 
+    case: "D", 
+    usage: "",
+    forms: "fürchtete sich / hat sich gefürchtet",
+    example: "Magdalena fürchtet sich vor kleinen Tieren.",
+    exampleTrans: "Magdalena 害怕小動物。"
+  },
+  { 
+    verb: "gehören", 
+    verbTrans: "屬於",
+    prep: "zu", 
+    case: "D", 
+    usage: "",
+    forms: "gehörte / hat gehört",
+    example: "Gehört der große Schäferhund zu dir?",
+    exampleTrans: "這隻大狼犬是你的嗎？(屬於你嗎)"
   },
   { 
     verb: "sich gewöhnen", 
@@ -292,8 +364,18 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "gewöhnte sich / hat sich gewöhnt",
-    example: "Es dauert eine Weile, bis man sich an das frühe Aufstehen gewöhnt hat.",
-    exampleTrans: "要習慣早起需要一段時間。"
+    example: "Ich kann mich hier in Deutschland einfach nicht an das wechselhafte Wetter gewöhnen.",
+    exampleTrans: "在德國這裡，我就是無法習慣這多變的天氣。"
+  },
+  { 
+    verb: "glauben", 
+    verbTrans: "相信",
+    prep: "an", 
+    case: "A", 
+    usage: "",
+    forms: "glaubte / hat geglaubt",
+    example: "Viele Menschen glauben an die Gerechtigkeit.",
+    exampleTrans: "許多人相信正義。"
   },
   { 
     verb: "gratulieren", 
@@ -312,8 +394,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "hoffte / hat gehofft",
-    example: "Die Bauern hoffen auf Regen, da die Ernte sonst vertrocknen würde.",
-    exampleTrans: "農民們期盼下雨，否則農作物會乾枯。"
+    example: "Bald machen wir Urlaub in Dänemark. Wir hoffen so auf gutes Wetter!",
+    exampleTrans: "我們很快要去丹麥度假。我們非常希望能有好天氣！"
   },
   { 
     verb: "sich interessieren", 
@@ -322,8 +404,18 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "interessierte sich / hat sich interessiert",
-    example: "Ich interessiere mich sehr für Geschichte, besonders für das Römische Reich.",
-    exampleTrans: "我對歷史非常感興趣，特別是羅馬帝國。"
+    example: "Mein Sohn interessiert sich nur noch für Autos.",
+    exampleTrans: "我的兒子現在只對汽車感興趣。"
+  },
+  { 
+    verb: "kämpfen", 
+    verbTrans: "戰鬥 / 爭取",
+    prep: "für", 
+    case: "A", 
+    usage: "für + A (為...而戰) / gegen + A (對抗...)",
+    forms: "kämpfte / hat gekämpft",
+    example: "Man muss für mehr Gerechtigkeit kämpfen.",
+    exampleTrans: "人們必須為了更多的正義而奮鬥。"
   },
   { 
     verb: "sich konzentrieren", 
@@ -332,8 +424,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "konzentrierte sich / hat sich konzentriert",
-    example: "Es fällt mir schwer, mich auf die Arbeit zu konzentrieren, wenn es so laut ist.",
-    exampleTrans: "如果是這麼吵的話，我很難專心工作。"
+    example: "Ich kann mich auf keinen Vortrag konzentrieren.",
+    exampleTrans: "我無法專注在任何演講上。"
   },
   { 
     verb: "sich kümmern", 
@@ -342,8 +434,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "kümmerte sich / hat sich gekümmert",
-    example: "Mach dir keine Sorgen, ich werde mich darum kümmern, dass alles erledigt wird.",
-    exampleTrans: "別擔心，我會負責把所有事情處理好。"
+    example: "Philipp kümmert sich um seinen kranken Vater.",
+    exampleTrans: "Philipp 正在照顧他生病的父親。"
   },
   { 
     verb: "lachen", 
@@ -372,8 +464,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "dachte nach / hat nachgedacht",
-    example: "Hast du schon einmal darüber nachgedacht, ins Ausland zu ziehen?",
-    exampleTrans: "你曾經考慮過搬到國外嗎？"
+    example: "Du bist so schweigsam - worüber denkst du denn die ganze Zeit nach?",
+    exampleTrans: "你這麼安靜——你整段時間都在想什麼呢？"
   },
   { 
     verb: "protestieren", 
@@ -386,14 +478,24 @@ const verbData = [
     exampleTrans: "市民抗議將公園變成停車場。"
   },
   { 
+    verb: "rechnen", 
+    verbTrans: "預期 / 指望",
+    prep: "mit", 
+    case: "D", 
+    usage: "",
+    forms: "rechnete / hat gerechnet",
+    example: "Am Wochenende muss man mit Regen rechnen.",
+    exampleTrans: "週末必須預期會下雨。"
+  },
+  { 
     verb: "schmecken", 
     verbTrans: "嚐起來有...味道",
     prep: "nach", 
     case: "D", 
     usage: "",
     forms: "schmeckte / hat geschmeckt",
-    example: "Dieser Kuchen schmeckt ein bisschen nach Zitrone, findest du nicht auch?",
-    exampleTrans: "這蛋糕嚐起來有點檸檬味，你不覺得嗎？"
+    example: "Das Essen schmeckt nach Spülmittel.",
+    exampleTrans: "這食物嚐起來有洗碗精的味道。"
   },
   { 
     verb: "schreiben", 
@@ -402,8 +504,8 @@ const verbData = [
     case: "A", 
     usage: "an + A (寫給某人)",
     forms: "schrieb / hat geschrieben",
-    example: "Seit er umgezogen ist, schreibt er regelmäßig Briefe an seine alten Freunde.",
-    exampleTrans: "自從搬家後，他定期寫信給他的老朋友們。"
+    example: "Ich werde an die Organisatoren schreiben.",
+    exampleTrans: "我將會寫信給主辦單位。"
   },
   { 
     verb: "sorgen", 
@@ -412,8 +514,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "sorgte / hat gesorgt",
-    example: "Die laute Musik sorgte dafür, dass die Nachbarn die Polizei riefen.",
-    exampleTrans: "巨大的音樂聲導致鄰居叫來了警察。"
+    example: "Sie sollen dafür sorgen, mir ein wirklich gutes Hotelzimmer zu geben.",
+    exampleTrans: "他們應該確保給我一間真的很棒的飯店房間。"
   },
   { 
     verb: "sprechen", 
@@ -422,8 +524,8 @@ const verbData = [
     case: "D / A", 
     usage: "mit + D (跟某人) / über + A (關於某事)",
     forms: "sprach / hat gesprochen",
-    example: "Ich muss unbedingt mit dir darüber sprechen, was gestern passiert ist.",
-    exampleTrans: "我一定要跟你談談昨天發生的事。"
+    example: "Susan spricht stundenlang mit ihrem Freund am Telefon.",
+    exampleTrans: "Susan 跟她男朋友講電話講了好幾個小時。"
   },
   { 
     verb: "streiten", 
@@ -432,8 +534,8 @@ const verbData = [
     case: "D", 
     usage: "mit + D (跟某人爭吵)",
     forms: "stritt / hat gestritten",
-    example: "Es bringt nichts, mit ihm zu streiten, weil er immer recht haben will.",
-    exampleTrans: "跟他吵架沒用，因為他總是想要贏。"
+    example: "Hans streitet laut mit seinem Kollegen.",
+    exampleTrans: "Hans 大聲地跟他的同事吵架。"
   },
   { 
     verb: "teilnehmen", 
@@ -442,8 +544,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "nahm teil / hat teilgenommen",
-    example: "Leider konnte er wegen einer Krankheit nicht an der Konferenz teilnehmen.",
-    exampleTrans: "遺憾的是，由於生病，他無法參加會議。"
+    example: "Nimmst du auch an der Exkursion am Samstag teil?",
+    exampleTrans: "你也會參加週六的戶外教學嗎？"
   },
   { 
     verb: "träumen", 
@@ -452,8 +554,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "träumte / hat geträumt",
-    example: "Sie träumt davon, eines Tages eine Weltreise zu machen.",
-    exampleTrans: "她夢想著有一天能環遊世界。"
+    example: "Familie Manns träumt von einem eigenen Haus.",
+    exampleTrans: "Manns 一家人夢想擁有一棟自己的房子。"
   },
   { 
     verb: "sich unterhalten", 
@@ -462,8 +564,8 @@ const verbData = [
     case: "D / A", 
     usage: "mit + D (跟某人) / über + A (關於某事)",
     forms: "unterhielt sich / hat sich unterhalten",
-    example: "Wir haben uns den ganzen Abend gut mit den Gästen über Reisen unterhalten.",
-    exampleTrans: "我們整晚都跟客人聊旅行聊得很開心。"
+    example: "Habe ich mich auch schon mit Susana unterhalten.",
+    exampleTrans: "我也已經跟 Susana 聊過了。"
   },
   { 
     verb: "sich verabreden", 
@@ -472,8 +574,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "verabredete sich / hat sich verabredet",
-    example: "Sie hat sich für heute Abend mit ihrer besten Freundin zum Essen verabredet.",
-    exampleTrans: "她跟她最好的朋友約好今晚一起吃飯。"
+    example: "Gestern hat sie sich mit diesem Carlos verabredet.",
+    exampleTrans: "昨天她跟那個叫 Carlos 的人約會了。"
   },
   { 
     verb: "sich verlassen", 
@@ -482,8 +584,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "verließ sich / hat sich verlassen",
-    example: "Du kannst dich darauf verlassen, dass ich dich pünktlich abhole.",
-    exampleTrans: "你可以信賴我會準時去接你。"
+    example: "Du kannst dich bestimmt auf sie verlassen.",
+    exampleTrans: "你一定可以信賴她。"
   },
   { 
     verb: "sich verlieben", 
@@ -492,8 +594,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "verliebte sich / hat sich verliebt",
-    example: "Es dauerte nicht lange, bis er sich in die charmante Italienerin verliebte.",
-    exampleTrans: "沒過多久，他就愛上了那位迷人的義大利女子。"
+    example: "Gerd ist in ein sehr hübsches Mädchen verliebt.",
+    exampleTrans: "Gerd 愛上了一位非常漂亮的女孩。"
   },
   { 
     verb: "etwas verstehen", 
@@ -502,8 +604,8 @@ const verbData = [
     case: "D", 
     usage: "",
     forms: "verstand / hat verstanden",
-    example: "Da er nichts von Elektrik versteht, hat er einen Fachmann gerufen.",
-    exampleTrans: "因為他對電學一竅不通，所以他請了專家。"
+    example: "Schließlich verstehst du etwas von Frauen!",
+    exampleTrans: "畢竟你還是懂女人的！"
   },
   { 
     verb: "sich vorbereiten", 
@@ -512,8 +614,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "bereitere sich vor / hat sich vorbereitet",
-    example: "Statt fernzusehen, sollte er sich lieber auf seine Abschlussprüfung vorbereiten.",
-    exampleTrans: "他不該看電視，而應該準備他的期末考。"
+    example: "Ich muss mich auf eine Prüfung vorbereiten.",
+    exampleTrans: "我必須準備考試。"
   },
   { 
     verb: "warten", 
@@ -522,8 +624,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "wartete / hat gewartet",
-    example: "Wir warten schon seit über einer Stunde darauf, dass der Bus endlich kommt.",
-    exampleTrans: "我們已經等公車終於來等了一個多小時了。"
+    example: "Warum wartest du nicht auf deinen Bruder?",
+    exampleTrans: "你為什麼不等你的兄弟？"
   },
   { 
     verb: "sich wenden", 
@@ -542,8 +644,8 @@ const verbData = [
     case: "A", 
     usage: "",
     forms: "wunderte sich / hat sich gewundert",
-    example: "Ich wundere mich darüber, dass er trotz der Kälte keine Jacke trägt.",
-    exampleTrans: "我很驚訝儘管這麼冷，他卻沒穿外套。"
+    example: "Manchmal wundere ich mich schon ein bisschen über die Österreicher.",
+    exampleTrans: "有時候我對奧地利人感到有點驚訝。"
   },
   { 
     verb: "zweifeln", 
@@ -613,6 +715,11 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
     speak(text, selectedVoice, speechRate);
   };
 
+  const handleFlip = (e) => {
+    e.stopPropagation();
+    setIsFlipped(!isFlipped);
+  };
+
   if (shuffledData.length === 0) return <div>Loading...</div>;
 
   const currentCard = shuffledData[currentIndex];
@@ -620,35 +727,40 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto min-h-[480px]">
       <div 
-        onClick={() => setIsFlipped(!isFlipped)}
-        className="w-full h-96 cursor-pointer perspective-1000 group relative"
+        className="w-full h-96 cursor-default group relative flip-card-container"
       >
-        <div className={`relative w-full h-full duration-500 preserve-3d transition-all transform ${isFlipped ? 'rotate-y-180' : ''}`}>
+        <div className={`flip-card-inner ${isFlipped ? 'flipped' : ''}`}>
           {/* Front */}
-          <div className="absolute w-full h-full backface-hidden bg-white border-2 border-amber-400 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 text-center">
+          <div className="flip-card-front bg-white border-2 border-amber-400 flex flex-col items-center justify-center p-6 text-center">
             <span className="text-sm text-gray-500 uppercase tracking-wider mb-2">Verb (動詞)</span>
             <h3 className="text-3xl font-bold text-gray-800 mb-2">{currentCard.verb}</h3>
             
-            {/* 中文翻譯顯示在正面 */}
-            <p className="text-lg text-amber-600 font-medium mb-4">{currentCard.verbTrans}</p>
+            <p className="text-lg text-amber-600 font-medium mb-8">{currentCard.verbTrans}</p>
 
             <button 
               onClick={(e) => playAudio(e, currentCard.verb)}
-              className="p-3 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:scale-110 transition-all mt-2 shadow-sm border border-amber-100"
+              className="p-3 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:scale-110 transition-all mt-2 shadow-sm border border-amber-100 mb-8"
               title="播放發音"
             >
               <Volume2 size={28} />
             </button>
 
-            <p className="text-xs text-gray-400 mt-auto">點擊翻轉查看介系詞與例句</p>
+            {/* 明顯的翻轉按鈕 */}
+            <button 
+              onClick={handleFlip}
+              className="mt-auto bg-amber-500 text-white px-6 py-3 rounded-full font-bold shadow-md hover:bg-amber-600 hover:shadow-lg transition-all flex items-center gap-2"
+            >
+               翻轉查看答案 <RotateCw size={18} />
+            </button>
           </div>
           
           {/* Back */}
-          <div className="absolute w-full h-full backface-hidden bg-amber-50 border-2 border-amber-500 rounded-xl shadow-lg flex flex-col items-center justify-center p-5 text-center rotate-y-180">
-            <span className="text-xs text-gray-500 uppercase tracking-wider mb-1">Lösung (答案)</span>
-            
+          <div 
+            onClick={handleFlip} // Clicking back flips it back
+            className="flip-card-back bg-amber-50 border-2 border-amber-500 flex flex-col items-center justify-center p-5 text-center cursor-pointer"
+          >
             {/* Verb + Prep */}
-            <h3 className="text-2xl font-bold text-amber-800 mb-1 flex items-center justify-center gap-2">
+            <h3 className="text-2xl font-bold text-amber-800 mb-1 flex items-center justify-center gap-2 mt-4">
               <span>{currentCard.verb} <span className="text-amber-600 underline decoration-2">{currentCard.prep}</span></span>
               <button 
                 onClick={(e) => playAudio(e, `${currentCard.verb} ${currentCard.prep}`)}
@@ -728,6 +840,7 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
 // Component: Quiz
 // -----------------------------------------------------------------------------
 const Quiz = ({ data, selectedVoice, speechRate }) => {
+  const [quizMode, setQuizMode] = useState('word'); // 'word' | 'sentence' | 'case'
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -751,7 +864,11 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
   // Save score logic
   const saveScore = (newScore) => {
     const today = new Date().toLocaleDateString();
-    const newEntry = { date: today, score: newScore, time: new Date().toLocaleTimeString() };
+    let modeLabel = '單字';
+    if (quizMode === 'sentence') modeLabel = '例句';
+    if (quizMode === 'case') modeLabel = '格位';
+    
+    const newEntry = { date: today, score: newScore, time: new Date().toLocaleTimeString(), mode: modeLabel };
     const newHistory = [newEntry, ...history].slice(0, 5); // Keep last 5
     setHistory(newHistory);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
@@ -759,8 +876,60 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
 
   const generateQuestion = () => {
     const randomVerb = data[Math.floor(Math.random() * data.length)];
-    const correctPreps = randomVerb.prep.split('/').map(s => s.trim());
     
+    // Case Mode Logic
+    if (quizMode === 'case') {
+      // Find verbs where case is clear A or D (avoid mixed A/D for simple quiz)
+      // Parse the case: if it contains A and D (like "D / A"), split it based on prep if possible, 
+      // but for simplicity, let's look for simple ones or pick one interpretation
+      
+      // Let's create a simpler question: What case follows this Verb + Prep?
+      // If data.case is "D", correct is Dativ. If "A", Akkusativ.
+      // If "D / A", we might need to skip or present specific context. Let's try to parse.
+      
+      const rawCase = randomVerb.case;
+      const rawPrep = randomVerb.prep;
+      
+      let correctAns = "";
+      let questionTitle = `${randomVerb.verb} + ${rawPrep}`;
+      
+      // Handle simple cases
+      if (rawCase === 'A') correctAns = 'Akkusativ';
+      else if (rawCase === 'D') correctAns = 'Dativ';
+      else {
+        // Complex case "bei / für" -> "D / A"
+        // Let's pick one randomly for the question
+        const preps = rawPrep.split('/').map(p => p.trim());
+        const cases = rawCase.split('/').map(c => c.trim());
+        
+        if (preps.length === cases.length) {
+           const idx = Math.floor(Math.random() * preps.length);
+           questionTitle = `${randomVerb.verb} + ${preps[idx]}`;
+           const c = cases[idx];
+           if (c.includes('A')) correctAns = 'Akkusativ';
+           else if (c.includes('D')) correctAns = 'Dativ';
+        } else {
+           // Fallback or skip if data format is weird, just regenerate
+           // But effectively, let's just default to asking the first one if we can't parse
+           if (rawCase.includes('A')) correctAns = 'Akkusativ'; // Fallback
+           else correctAns = 'Dativ';
+        }
+      }
+      
+      // Ensure we have a valid correct answer, otherwise regenerate (recursive but simple here)
+      if (!correctAns) {
+         return generateQuestion();
+      }
+
+      setCurrentQuestion({ ...randomVerb, displayQuestion: questionTitle, correctAnswer: correctAns });
+      setOptions(['Akkusativ', 'Dativ']);
+      setSelectedOption(null);
+      setShowResult(false);
+      return;
+    }
+
+    // Word & Sentence Mode Logic
+    const correctPreps = randomVerb.prep.split('/').map(s => s.trim());
     const distractors = [];
     while (distractors.length < 3) {
       const randP = PREPOSITIONS[Math.floor(Math.random() * PREPOSITIONS.length)];
@@ -779,15 +948,21 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
 
   useEffect(() => {
     generateQuestion();
-  }, []);
+  }, [quizMode]);
 
   const handleOptionClick = (option) => {
     if (showResult) return;
     setSelectedOption(option);
     setShowResult(true);
 
-    const correctPreps = currentQuestion.prep.split('/').map(s => s.trim());
-    const isCorrect = correctPreps.includes(option);
+    let isCorrect = false;
+    
+    if (quizMode === 'case') {
+      isCorrect = option === currentQuestion.correctAnswer;
+    } else {
+      const correctPreps = currentQuestion.prep.split('/').map(s => s.trim());
+      isCorrect = correctPreps.includes(option);
+    }
     
     if (isCorrect) {
       const newScore = score + 1;
@@ -803,15 +978,40 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
 
   if (!currentQuestion) return <div>Loading Quiz...</div>;
 
-  const prep = currentQuestion.prep.split('/')[0].trim();
+  // Masking logic for Word/Sentence modes
+  const prep = currentQuestion.prep ? currentQuestion.prep.split('/')[0].trim() : "";
   const daPrep = "da" + (["a", "e", "i", "o", "u"].includes(prep[0]) ? "r" : "") + prep;
   
-  let maskedExample = currentQuestion.example;
-  const regex = new RegExp(`\\b(${prep}|${daPrep})\\b`, 'gi');
-  maskedExample = maskedExample.replace(regex, "___");
+  let maskedExample = currentQuestion.example || "";
+  if (quizMode !== 'case') {
+    const regex = new RegExp(`\\b(${prep}|${daPrep})\\b`, 'gi');
+    maskedExample = maskedExample.replace(regex, "___");
+  }
 
   return (
     <div className="w-full max-w-md mx-auto">
+      {/* Mode Switcher */}
+      <div className="flex justify-center mb-6 bg-white p-1 rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <button
+          onClick={() => { setQuizMode('word'); setScore(0); setStreak(0); }}
+          className={`flex-1 py-2 px-2 text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1 ${quizMode === 'word' ? 'bg-amber-100 text-amber-800' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          <Type size={14} /> 單字
+        </button>
+        <button
+          onClick={() => { setQuizMode('sentence'); setScore(0); setStreak(0); }}
+          className={`flex-1 py-2 px-2 text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1 ${quizMode === 'sentence' ? 'bg-amber-100 text-amber-800' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          <MessageSquare size={14} /> 例句
+        </button>
+        <button
+          onClick={() => { setQuizMode('case'); setScore(0); setStreak(0); }}
+          className={`flex-1 py-2 px-2 text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1 ${quizMode === 'case' ? 'bg-amber-100 text-amber-800' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          <Scale size={14} /> 格位
+        </button>
+      </div>
+
       {/* Score Board */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -837,9 +1037,9 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {history.map((h, i) => (
-                <span key={i} className="inline-flex flex-col bg-gray-50 px-2 py-1 rounded border border-gray-100 text-xs text-center min-w-[60px]">
+                <span key={i} className="inline-flex flex-col bg-gray-50 px-2 py-1 rounded border border-gray-100 text-xs text-center min-w-[70px]">
                   <span className="font-bold text-gray-700">{h.score}分</span>
-                  <span className="text-[10px] text-gray-400">{h.date}</span>
+                  <span className="text-[9px] text-gray-400">{h.mode}</span>
                 </span>
               ))}
             </div>
@@ -850,28 +1050,61 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
       {/* Question Card */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 relative overflow-hidden">
         <div className="text-center mb-8 relative z-10">
-          <p className="text-gray-500 mb-2">Welche Präposition passt?</p>
-          <div className="flex flex-col items-center justify-center gap-1 mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-3xl font-bold text-gray-800">{currentQuestion.verb}</h2>
-              <button onClick={() => speak(currentQuestion.verb, selectedVoice, speechRate)} className="text-amber-500 hover:text-amber-600">
-                <Volume2 size={24} />
-              </button>
+          <p className="text-gray-500 mb-2">
+            {quizMode === 'word' ? 'Welche Präposition passt?' : 
+             quizMode === 'sentence' ? 'Ergänzen Sie den Satz:' : 'Welcher Kasus? (哪一個格位?)'}
+          </p>
+          
+          {quizMode === 'word' && (
+            <div className="flex flex-col items-center justify-center gap-1 mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-bold text-gray-800">{currentQuestion.verb}</h2>
+                <button onClick={() => speak(currentQuestion.verb, selectedVoice, speechRate)} className="text-amber-500 hover:text-amber-600">
+                  <Volume2 size={24} />
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 font-medium">({currentQuestion.verbTrans})</p>
             </div>
-            {/* 測驗時也顯示中文意思，幫助理解 */}
-            <p className="text-sm text-gray-500 font-medium">({currentQuestion.verbTrans})</p>
-          </div>
-          {/* Hint Context */}
-           <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 italic leading-relaxed">
-             "{maskedExample}"
-           </div>
+          )}
+
+          {quizMode === 'sentence' && (
+             <div className="mb-6">
+               <div className="bg-amber-50 p-4 rounded-xl text-lg text-gray-800 font-medium leading-relaxed border-l-4 border-amber-400 text-left">
+                 "{maskedExample}"
+               </div>
+               <p className="text-xs text-gray-400 mt-2 text-right">請選擇正確的介系詞填入空格</p>
+             </div>
+          )}
+
+          {quizMode === 'case' && (
+            <div className="flex flex-col items-center justify-center gap-1 mb-4">
+              <h2 className="text-2xl font-bold text-gray-800 bg-gray-100 px-4 py-2 rounded-lg">
+                {currentQuestion.displayQuestion}
+              </h2>
+              <p className="text-sm text-gray-400 mt-2">接 Akkusativ (A) 還是 Dativ (D) ?</p>
+            </div>
+          )}
+
+          {/* Hint Context for Word Mode */}
+          {quizMode === 'word' && (
+             <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-400 italic leading-relaxed opacity-50">
+               (提示: 看例句) "{maskedExample}"
+             </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
           {options.map((opt, idx) => {
-            const correctPreps = currentQuestion.prep.split('/').map(s => s.trim());
-            const isCorrect = correctPreps.includes(opt);
-            const isSelected = selectedOption === opt;
+            // Determine correctness logic based on mode
+            let isCorrect = false;
+            let isSelected = selectedOption === opt;
+
+            if (quizMode === 'case') {
+               isCorrect = opt === currentQuestion.correctAnswer;
+            } else {
+               const correctPreps = currentQuestion.prep.split('/').map(s => s.trim());
+               isCorrect = correctPreps.includes(opt);
+            }
             
             let btnClass = "p-4 rounded-lg font-bold text-lg transition-all border-2 ";
             
@@ -902,17 +1135,25 @@ const Quiz = ({ data, selectedVoice, speechRate }) => {
 
         {showResult && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 relative z-10">
-            <div className={`p-4 rounded-lg mb-4 text-center ${currentQuestion.prep.includes(selectedOption) ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+            <div className={`p-4 rounded-lg mb-4 text-center ${
+              (quizMode === 'case' && selectedOption === currentQuestion.correctAnswer) ||
+              (quizMode !== 'case' && currentQuestion.prep.includes(selectedOption))
+                ? 'bg-green-50 text-green-800' 
+                : 'bg-red-50 text-red-800'
+            }`}>
               <p className="font-bold mb-1">
-                {currentQuestion.prep.includes(selectedOption) ? 'Richtig! (正確)' : 'Leider falsch (答錯了)'}
+                {(quizMode === 'case' && selectedOption === currentQuestion.correctAnswer) ||
+                 (quizMode !== 'case' && currentQuestion.prep.includes(selectedOption))
+                 ? 'Richtig! (正確)' : 'Leider falsch (答錯了)'}
               </p>
+              
               <div className="flex flex-col items-center mt-2">
                  <p className="text-lg mb-1">
                   {currentQuestion.verb} <span className="font-bold underline">{currentQuestion.prep}</span>
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    (+ {currentQuestion.case})
+                  </span>
                  </p>
-                 {currentQuestion.usage && (
-                   <p className="text-xs text-gray-600 mb-2 bg-white/50 px-2 py-1 rounded">{currentQuestion.usage}</p>
-                 )}
                  <button onClick={() => speak(currentQuestion.example, selectedVoice, speechRate)} className="text-sm flex items-center gap-1 opacity-80 hover:opacity-100 bg-white/50 px-2 py-1 rounded-full">
                     <Volume2 size={14} /> 聽例句
                  </button>
@@ -1056,6 +1297,121 @@ const ReferenceList = ({ data, selectedVoice, speechRate }) => {
 };
 
 // -----------------------------------------------------------------------------
+// Component: Grammatik (New Feature)
+// -----------------------------------------------------------------------------
+const Grammatik = ({ selectedVoice, speechRate }) => {
+  return (
+    <div className="w-full max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Title */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
+          <GraduationCap className="text-amber-500" />
+          Grammatik: Wo- & Da-
+        </h2>
+        <p className="text-gray-500 mt-2">如何正確使用 Worauf, Darauf 等代詞副詞</p>
+      </div>
+
+      {/* Section 1: Wo(r) + Präposition */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-8">
+        <div className="bg-amber-100 p-4 border-b border-amber-200">
+          <h3 className="text-lg font-bold text-amber-900 flex items-center gap-2">
+            1. 疑問詞：Wo(r) + Präposition
+          </h3>
+        </div>
+        <div className="p-6">
+          <p className="text-gray-700 mb-4">當我們想針對「介系詞受詞」提問時，要區分是 <strong className="text-red-500">人 (Person)</strong> 還是 <strong className="text-blue-500">物/事 (Sache)</strong>。</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Case: Person */}
+            <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+              <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2">
+                <span className="bg-red-200 rounded-full w-6 h-6 flex items-center justify-center text-xs">A</span>
+                針對「人」 (Person)
+              </h4>
+              <p className="text-sm text-gray-600 mb-2">使用 <strong>Präposition + 疑問代詞 (wen/wem)</strong></p>
+              <div className="bg-white p-3 rounded border border-red-100 text-sm">
+                <p className="mb-1 font-mono text-gray-800">Auf <span className="text-red-600 font-bold">wen</span> wartest du?</p>
+                <p className="text-gray-500 text-xs">你在等誰？ (Akkusativ)</p>
+                <div className="my-2 border-t border-gray-100"></div>
+                <p className="mb-1 font-mono text-gray-800">Mit <span className="text-red-600 font-bold">wem</span> sprichst du?</p>
+                <p className="text-gray-500 text-xs">你在跟誰說話？ (Dativ)</p>
+              </div>
+            </div>
+
+            {/* Case: Sache */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h4 className="font-bold text-blue-700 mb-2 flex items-center gap-2">
+                 <span className="bg-blue-200 rounded-full w-6 h-6 flex items-center justify-center text-xs">B</span>
+                針對「事/物」 (Sache)
+              </h4>
+              <p className="text-sm text-gray-600 mb-2">使用 <strong>Wo(r) + Präposition</strong></p>
+              <div className="bg-white p-3 rounded border border-blue-100 text-sm">
+                <p className="mb-1 font-mono text-gray-800"><span className="text-blue-600 font-bold">Worauf</span> wartest du?</p>
+                <p className="text-gray-500 text-xs">你在等什麼？ (wo + r + auf)</p>
+                <div className="my-2 border-t border-gray-100"></div>
+                <p className="mb-1 font-mono text-gray-800"><span className="text-blue-600 font-bold">Womit</span> fährst du?</p>
+                <p className="text-gray-500 text-xs">你搭什麼交通工具？ (wo + mit)</p>
+              </div>
+              <p className="text-xs text-blue-400 mt-2 italic">* 如果介系詞以母音開頭 (如 auf, über)，中間要加 "r"。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 2: Da(r) + Präposition */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-green-100 p-4 border-b border-green-200">
+          <h3 className="text-lg font-bold text-green-900 flex items-center gap-2">
+            2. 代名詞：Da(r) + Präposition
+          </h3>
+        </div>
+        <div className="p-6">
+          <p className="text-gray-700 mb-4">當我們要指代前面提過的「事情」或「整句話」時使用。不能用來指人！</p>
+          
+          <div className="space-y-4">
+            {/* Example 1 */}
+            <div className="flex flex-col md:flex-row gap-4 items-start bg-gray-50 p-4 rounded-lg">
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-1">指代名詞 (Nomen):</p>
+                <p className="font-medium text-gray-800">
+                  Er hat ein neues Auto. Er freut sich <span className="text-green-600 font-bold">darüber</span>.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">他有輛新車。他對<span className="underline">這件事(車)</span>感到高興。</p>
+              </div>
+              <ArrowRight className="hidden md:block text-gray-300 mt-4" />
+              <div className="md:w-1/3 text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
+                Darüber = Über das Auto
+              </div>
+            </div>
+
+            {/* Example 2 */}
+            <div className="flex flex-col md:flex-row gap-4 items-start bg-gray-50 p-4 rounded-lg">
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-1">指代子句 (Nebensatz):</p>
+                <p className="font-medium text-gray-800">
+                  Ich warte <span className="text-green-600 font-bold">darauf</span>, dass der Bus kommt.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">我在等待<span className="underline">公車來這件事</span>。</p>
+              </div>
+              <ArrowRight className="hidden md:block text-gray-300 mt-4" />
+              <div className="md:w-1/3 text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
+                Darauf = dass der Bus kommt
+              </div>
+            </div>
+          </div>
+          
+           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-100 rounded text-sm text-yellow-800 flex gap-2">
+             <Info className="shrink-0" size={16} />
+             <p>注意：Da(r)- 結構只能指代「事物」。如果是人，必須使用介系詞 + 代名詞 (如: auf ihn, mit ihr)。</p>
+           </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// -----------------------------------------------------------------------------
 // Component: Voice Settings
 // -----------------------------------------------------------------------------
 const VoiceSettings = ({ voices, selectedVoice, setSelectedVoice, speechRate, setSpeechRate, isOpen, onClose }) => {
@@ -1178,6 +1534,9 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-12">
+      {/* Inject custom CSS for 3D flip */}
+      <style>{customStyles}</style>
+
       {/* Settings Modal */}
       <VoiceSettings 
         voices={voices}
@@ -1194,7 +1553,7 @@ const App = () => {
         <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">🇩🇪 Verben mit Präpositionen</h1>
           <p className="text-amber-100 opacity-90 text-sm md:text-base flex items-center justify-center gap-2 mb-4">
-            A1-B1 德語特訓
+             動詞介系詞學習助手
           </p>
           
           {/* Voice Settings Button */}
@@ -1212,10 +1571,10 @@ const App = () => {
 
       {/* Navigation Container */}
       <div className="container mx-auto px-4 -mt-8 relative z-20">
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-1 flex justify-center max-w-lg mx-auto mb-8">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-1 flex justify-center max-w-lg mx-auto mb-8 overflow-hidden">
           <button 
             onClick={() => setActiveTab('cards')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 md:px-4 text-sm md:text-base font-medium transition-all ${
               activeTab === 'cards' 
                 ? 'bg-amber-100 text-amber-800 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -1223,10 +1582,11 @@ const App = () => {
           >
             <BookOpen size={18} />
             <span className="hidden sm:inline">單字卡</span>
+            <span className="sm:hidden">卡片</span>
           </button>
           <button 
             onClick={() => setActiveTab('quiz')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 md:px-4 text-sm md:text-base font-medium transition-all ${
               activeTab === 'quiz' 
                 ? 'bg-amber-100 text-amber-800 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -1236,8 +1596,20 @@ const App = () => {
             <span className="hidden sm:inline">測驗</span>
           </button>
           <button 
+            onClick={() => setActiveTab('grammatik')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 md:px-4 text-sm md:text-base font-medium transition-all ${
+              activeTab === 'grammatik' 
+                ? 'bg-amber-100 text-amber-800 shadow-sm' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <GraduationCap size={18} />
+            <span className="hidden sm:inline">文法</span>
+            <span className="sm:hidden">文法</span>
+          </button>
+          <button 
             onClick={() => setActiveTab('list')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 md:px-4 text-sm md:text-base font-medium transition-all ${
               activeTab === 'list' 
                 ? 'bg-amber-100 text-amber-800 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -1252,13 +1624,14 @@ const App = () => {
         <main className="animate-in fade-in duration-500">
           {activeTab === 'cards' && <Flashcards data={verbData} selectedVoice={selectedVoice} speechRate={speechRate} />}
           {activeTab === 'quiz' && <Quiz data={verbData} selectedVoice={selectedVoice} speechRate={speechRate} />}
+          {activeTab === 'grammatik' && <Grammatik selectedVoice={selectedVoice} speechRate={speechRate} />}
           {activeTab === 'list' && <ReferenceList data={verbData} selectedVoice={selectedVoice} speechRate={speechRate} />}
         </main>
       </div>
 
       {/* Footer */}
       <footer className="mt-20 text-center text-gray-400 text-sm">
-        <p>資料來源：A1-B1 Übungsgrammatik + 擴充例句庫</p>
+        <p>資料來源：A1-B1 Übungsgrammatik</p>
         <div className="w-16 h-1 bg-gradient-to-r from-black via-red-600 to-yellow-400 mx-auto mt-4 rounded-full opacity-30"></div>
       </footer>
     </div>
