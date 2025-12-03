@@ -727,7 +727,8 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto min-h-[480px]">
       <div 
-        className="w-full h-96 cursor-default group relative flip-card-container"
+        className="w-full h-96 cursor-pointer group relative flip-card-container"
+        onClick={handleFlip} // Make the entire container clickable for flipping
       >
         <div className={`flip-card-inner ${isFlipped ? 'flipped' : ''}`}>
           {/* Front */}
@@ -739,24 +740,20 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
 
             <button 
               onClick={(e) => playAudio(e, currentCard.verb)}
-              className="p-3 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:scale-110 transition-all mt-2 shadow-sm border border-amber-100 mb-8"
+              className="p-3 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:scale-110 transition-all mt-2 shadow-sm border border-amber-100 mb-8 z-10"
               title="播放發音"
             >
               <Volume2 size={28} />
             </button>
 
-            {/* 明顯的翻轉按鈕 */}
-            <button 
-              onClick={handleFlip}
-              className="mt-auto bg-amber-500 text-white px-6 py-3 rounded-full font-bold shadow-md hover:bg-amber-600 hover:shadow-lg transition-all flex items-center gap-2"
-            >
-               翻轉查看答案 <RotateCw size={18} />
-            </button>
+            {/* 提示點擊 */}
+            <div className="mt-auto text-amber-400 text-sm opacity-60">
+               (點擊卡片翻轉)
+            </div>
           </div>
           
           {/* Back */}
           <div 
-            onClick={handleFlip} // Clicking back flips it back
             className="flip-card-back bg-amber-50 border-2 border-amber-500 flex flex-col items-center justify-center p-5 text-center cursor-pointer"
           >
             {/* Verb + Prep */}
@@ -764,7 +761,7 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
               <span>{currentCard.verb} <span className="text-amber-600 underline decoration-2">{currentCard.prep}</span></span>
               <button 
                 onClick={(e) => playAudio(e, `${currentCard.verb} ${currentCard.prep}`)}
-                className="p-1 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                className="p-1 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors z-10"
                 title="播放片語發音"
               >
                 <Volume2 size={16} />
@@ -788,7 +785,7 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
                 <p className="text-sm font-medium text-gray-800 italic leading-snug text-left px-2">"{currentCard.example}"</p>
                 <button 
                   onClick={(e) => playAudio(e, currentCard.example)}
-                  className="shrink-0 text-amber-600 hover:text-amber-800"
+                  className="shrink-0 text-amber-600 hover:text-amber-800 z-10"
                   title="播放例句"
                 >
                   <Volume2 size={16} />
@@ -804,7 +801,7 @@ const Flashcards = ({ data, selectedVoice, speechRate }) => {
                 <span>{currentCard.forms}</span>
                 <button 
                   onClick={(e) => playAudio(e, currentCard.forms)}
-                  className="text-amber-600 hover:text-amber-800"
+                  className="text-amber-600 hover:text-amber-800 z-10"
                   title="播放時態變化"
                 >
                   <Volume2 size={14} />
